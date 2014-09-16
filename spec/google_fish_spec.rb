@@ -88,7 +88,7 @@ describe GoogleFish::Request do
       end
     end
 
-    context "bad response" do
+    context "bad JSON response" do
       let(:query) { GoogleFish.new('key') }
       let(:request) { GoogleFish::Request.new(query) }
       let(:stubbed_response) { File.open('spec/support/bad.json') }
@@ -99,8 +99,24 @@ describe GoogleFish::Request do
           to_return(stubbed_response)
       end
 
-      it "should raise an error if response is bad" do
-        expect { request.perform_translation }.to raise_error GoogleFish::Request::ApiError
+      it "should raise an error if JSON response is bad" do
+        expect { request.perform_translation }.to raise_error(RuntimeError, 'GoogleFish::Request::ApiError : {"error"=>{"errors"=>[{"domain"=>"global", "reason"=>"badRequest", "message"=>"Bad Request"}], "code"=>400, "message"=>"Bad Request"}}')
+      end
+    end
+
+    context "bad HTML response" do
+      let(:query) { GoogleFish.new('key') }
+      let(:request) { GoogleFish::Request.new(query) }
+      let(:stubbed_response) { File.open('spec/support/bad.html') }
+
+      before do
+        query.source, query.target, query.q = :en, :es, 'hello'
+        stub_request(:get, "https://www.googleapis.com/language/translate/v2?format=text&key=key&q=hello&source=en&target=es").
+          to_return(stubbed_response)
+      end
+
+      it "should raise an error if HTML response is bad" do
+        expect { request.perform_translation }.to raise_error(RuntimeError, 'GoogleFish::Request::ApiError : Bad RequestBad RequestError 400')
       end
     end
 

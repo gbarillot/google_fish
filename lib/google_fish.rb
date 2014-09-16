@@ -58,8 +58,19 @@ class GoogleFish::Request
     http.verify_mode = OpenSSL::SSL::VERIFY_NONE
     req = Net::HTTP::Get.new(uri.request_uri)
     res = http.request(req)
-    raise GoogleFish::Request::ApiError unless res.code.to_i == 200
-    res.body
+
+    if res.code.to_i == 200
+      return res.body
+    else
+      if res.content_type == "application/json"
+        message = JSON.parse(res.body)
+      else
+        re = /<("[^"]*"|'[^']*'|[^'">])*>/
+        message = res.body.gsub!(re, "").gsub!("\n","")
+      end
+
+      raise "GoogleFish::Request::ApiError : #{message}"
+    end
   end
 
   def parse
